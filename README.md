@@ -1,0 +1,2 @@
+# FASTory
+Industrial Informatics
