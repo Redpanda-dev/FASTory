@@ -7,54 +7,71 @@ _events = "/rest/events/"
 _ip = socket.gethostbyname(socket.gethostname())
 
 class Workstation:
-    def __init__(self,ip, zspot_number):
-        self.serviceurl = f'{ip}{_services}'
-        self.eventsurl = f'{ip}{_events}'
+    def __init__(self,ip_rob, ip_cnv, zspot_number):
+        self.robot_ip = ip_rob
+        self.conveyor_ip = ip_cnv
+        self.roboturl = f'{ip_rob}{_services}'
+        self.conveyorurl = f'{ip_cnv}{_events}'
         self.pen_color = None
         self.zspots = [None]*zspot_number
 
     def move12(self):
         if self.zspots[0] != None and self.zspots[1] == None:
-            pallet = self.zspots[0]
-            self.zspots[1] = pallet
-            self.zspots[0] = None
-            return True
+            body = {"destUrl" : f"{self.aswer:url}:8080"}
+            response = requests.post(url=f"{self.conveyor_ip}/rest/services/TransZone12", data=body)
+            if response.status_code == 202:
+                pallet = self.zspots[0]
+                self.zspots[1] = pallet
+                self.zspots[0] = None
+                return True
         else:
             return False 
 
     def move23(self):
         if self.zspots[1] != None and self.zspots[2] == None:
-            pallet = self.zspots[1]
-            self.zspots[2] = pallet
-            self.zspots[1] = None
-            return True
+            body = {"destUrl" : f"{self.aswer:url}:8080"}
+            response = requests.post(url=f"{self.conveyor_ip}/rest/services/TransZone23", data=body)
+            if response.status_code == 202:
+                pallet = self.zspots[1]
+                self.zspots[2] = pallet
+                self.zspots[1] = None
+                return True
         else:
             return False
         
     def move35(self):
         if self.zspots[2] != None and self.zspots[4] == None:
-            pallet = self.zspots[2]
-            self.zspots[4] = pallet
-            self.zspots[2] = None
-            return True
+            body = {"destUrl" : f"{self.aswer:url}:8080"}
+            response = requests.post(url=f"{self.conveyor_ip}/rest/services/TransZone35", data=body)
+            if response.status_code == 202:
+                pallet = self.zspots[2]
+                self.zspots[4] = pallet
+                self.zspots[2] = None
+                return True
         else:
             return False
 
     def move14(self):
         if self.zspots[0] != None and self.zspots[3] == None:
-            pallet = self.zspots[0]
-            self.zspots[3] = pallet
-            self.zspots[0] = None
-            return True
+            body = {"destUrl" : f"{self.aswer:url}:8080"}
+            response = requests.post(url=f"{self.conveyor_ip}/rest/services/TransZone14", data=body)
+            if response.status_code == 202:
+                pallet = self.zspots[0]
+                self.zspots[3] = pallet
+                self.zspots[0] = None
+                return True
         else:
             return False
 
     def move45(self):
         if self.zspots[3] != None and self.zspots[4] == None:
-            pallet = self.zspots[3]
-            self.zspots[3] = pallet
-            self.zspots[4] = None
-            return True
+            body = {"destUrl" : f"{self.aswer:url}:8080"}
+            response = requests.post(url=f"{self.conveyor_ip}/rest/services/TransZone45", data=body)
+            if response.status_code == 202:
+                pallet = self.zspots[3]
+                self.zspots[3] = pallet
+                self.zspots[4] = None
+                return True
         else:
             return False
     
@@ -63,7 +80,10 @@ class Workstation:
         
 
     def get_status(self, spot):
-        return self.zspots[spot-1]
+        if self.zspots[spot-1] != None:
+            return self.zspots[spot-1]
+        else:
+            return -1
 
     def draw(self, receipe):
 
@@ -80,11 +100,13 @@ class Workstation:
         else:
             print("Undefined color")
 
-        command = f'{self.serviceurl}{s}'
+        command = f'{self.robot_ip}/rest/services/{s}'
         response = requests.post(url=command)
         if response.status_code == 202:
             self.pen_color = "RED"
-        return 0
+            
+    def get_pen_color(self):
+        return self.pen_color
 
 def check_IP():
     try:
