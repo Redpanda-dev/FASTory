@@ -7,9 +7,10 @@ _events = "/rest/events/"
 _ip = socket.gethostbyname(socket.gethostname())
 
 class Workstation:
-    def __init__(self,ip_rob, ip_cnv, zspot_number):
+    def __init__(self,ip_rob, ip_cnv, answerurl ,zspot_number):
         self.robot_ip = ip_rob
         self.conveyor_ip = ip_cnv
+        self.answerurl = answerurl
         self.roboturl = f'{ip_rob}{_services}'
         self.conveyorurl = f'{ip_cnv}{_events}'
         self.pen_color = None
@@ -17,7 +18,7 @@ class Workstation:
 
     def move12(self):
         if self.zspots[0] != None and self.zspots[1] == None:
-            body = {"destUrl" : f"{self.aswer:url}:8080"}
+            body = {"destUrl" : f"{self.answerurl}:8080"}
             response = requests.post(url=f"{self.conveyor_ip}/rest/services/TransZone12", data=body)
             if response.status_code == 202:
                 pallet = self.zspots[0]
@@ -29,7 +30,7 @@ class Workstation:
 
     def move23(self):
         if self.zspots[1] != None and self.zspots[2] == None:
-            body = {"destUrl" : f"{self.aswer:url}:8080"}
+            body = {"destUrl" : f"{self.answerurl}:8080"}
             response = requests.post(url=f"{self.conveyor_ip}/rest/services/TransZone23", data=body)
             if response.status_code == 202:
                 pallet = self.zspots[1]
@@ -41,7 +42,7 @@ class Workstation:
         
     def move35(self):
         if self.zspots[2] != None and self.zspots[4] == None:
-            body = {"destUrl" : f"{self.aswer:url}:8080"}
+            body = {"destUrl" : f"{self.answerurl}:8080"}
             response = requests.post(url=f"{self.conveyor_ip}/rest/services/TransZone35", data=body)
             if response.status_code == 202:
                 pallet = self.zspots[2]
@@ -53,7 +54,7 @@ class Workstation:
 
     def move14(self):
         if self.zspots[0] != None and self.zspots[3] == None:
-            body = {"destUrl" : f"{self.aswer:url}:8080"}
+            body = {"destUrl" : f"{self.answerurl}:8080"}
             response = requests.post(url=f"{self.conveyor_ip}/rest/services/TransZone14", data=body)
             if response.status_code == 202:
                 pallet = self.zspots[0]
@@ -65,7 +66,7 @@ class Workstation:
 
     def move45(self):
         if self.zspots[3] != None and self.zspots[4] == None:
-            body = {"destUrl" : f"{self.aswer:url}:8080"}
+            body = {"destUrl" : f"{self.answerurl}:8080"}
             response = requests.post(url=f"{self.conveyor_ip}/rest/services/TransZone45", data=body)
             if response.status_code == 202:
                 pallet = self.zspots[3]
