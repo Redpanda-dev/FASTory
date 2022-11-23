@@ -1,10 +1,12 @@
 from flask import Flask, request
 from FASTory import Workstation
 import json
+import time
 
 app = Flask(__name__)
 
 history = []
+running = False
 orders = {}
 order_id = 0
 workstations = {}
@@ -12,32 +14,20 @@ input_file = "fileWithFASTortyinfo"
 
 @app.post("/makeOrder/")
 def make_order():
-    global history
     if request:
         jsonmessage = request.form
         message = json.loads(jsonmessage)
         print(message)
         phone_model = message['phone']
         phone_color = message['color']
-        history.append(message)
-        create_order()
-        move_workstations()
+        create_order(phone_model,phone_color)
 
-@app.post("/actionDone/<ws_id>")
-def make_ready(ws_id=None):
-    wsid = ws_id
-    ws = workstations[wsid]
-    ws.ready_for_action()
-    move_workstations()
-    return 202
-    
-def FASTory_intialize(input_file):
-    with open(input_file, "w") as file:
-        data = json.loads(file)
-    for ws in data:
-        wstation = Workstation(ws['id'], ws['robot']['ip'], ws['conveyor']['ip'], ws['response']['url'], len(ws['spots']))
-        wstation.initialize()
-        workstations[ws['id']] = wstation
+@app.post("/kill/")
+def stop():
+    global running
+    if running:
+        running = False
+    return True
         
 def create_order(model, color):
     global orders
@@ -49,9 +39,48 @@ def create_order(model, color):
 def clear_order(order_id):
     global orders
     del orders[order_id]
+    
+def move_workstation(ws):
+    ws.ready()
+    spots = ws.get_spots()
+    if spots[2] != -1 and ws.order_ready == False:
+        ws.draw(orders[order_id])
+    elif spots[4] == -1 and spots[2] != -1:
+        suc, msg = ws.move35()
+        if not suc:
+            print(suc, msg)
+    elif spots[2] == -1 and spots[1] != -1:
+        suc, msg = ws.move23()
+        if not suc:
+            print(suc, msg)
+    elif spots[1] == -1 and spots[0] != -1:
+        suc, msg = ws.move12()
+        if not suc:
+            print(suc, msg)
+    elif spots[3] == -1 and spots[0] != -1:
+        suc, msg = ws.move14()
+        if not suc:
+            print(suc, msg)
+    elif spots[4] == -1 and spots[3] != -1:
+        suc, msg = ws.move45()
+        if not suc:
+            print(suc, msg)
+    else:
+        ws.load_pallet(1,order_id)
 
-def move_workstations():
+def cycle_workstations():
     global workstations
     for ws in workstations:
-        ws_status = ws.zspots
+        move_workstation(ws)
         
+def add_workstaion(ws_id, ip_rob, ip_cnv, answerurl, zspot_number):
+    global workstations
+    ws = Workstation(ws_id, ip_rob, ip_cnv, answerurl, zspot_number)
+    workstations.append(ws)
+        
+
+if __name__ == '__main__':
+    app.run(debug=True, port=8080)
+    while(running):
+        cycle_workstations()
+        time.sleep(10)
