@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, Response
 import threading
 import paho.mqtt.client as mqtt
 import configparser
@@ -7,6 +7,10 @@ import random
 import json
 import sqlite3
 import webbrowser
+import io
+import matplotlib.pyplot as pyplot
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from matplotlib.figure import Figure
 
 ######################## HOW TO RUN THE PROGRAM #########################
 #                                                                       #
@@ -77,6 +81,31 @@ def get_robots_all_statuses_by_rid(id):
     else:
         return []
 
+def get_robots_unique_states_by_rid(id):
+    c.execute("SELECT DISTINCT state FROM robot WHERE devId=:devId", {'devId': id})
+    #fetchone = c.fetchone()
+    fetchall = c.fetchall()
+    print(fetchall)
+    i = len(fetchall)
+    if i > 0:
+        return fetchall
+    else:
+        return []
+
+def get_robots_amount_of_of_statues_By_rid_and_status(nID, state):
+    c.execute("""
+    SELECT 
+        state,
+        COUNT(*) AS 'amount'
+    FROM 
+        robot 
+    WHERE 
+        devId=:devId AND state=:state
+    """, {'devId': nID, 'state':state})
+    fetch = c.fetchone()
+    #print(fetch)
+    return fetch
+
 # READ ALL ROBOTS
 def get_all_robots():
     #c.execute("SELECT * FROM robot WHERE brand=:brand", {'brand': brand})
@@ -102,14 +131,35 @@ def remove_robot(devId):
 
 # HISTORICAL DATA
 def historicalData_By_ID(nID):
-    diagramData = checkStatePrecentage_By_ID(nID)
+    diagramData = State_rations_By_ID(nID)
     MTBFData = checkMTBF_By_ID(nID)
     return diagramData, MTBFData
 
-def checkStatePrecentage_By_ID(nID):
-    statuses = get_robots_all_statuses_by_rid(nID)
+def State_rations_By_ID(nID):
+    values = []
+    uniqueStates_list = get_robots_unique_states_by_rid(nID)
+    # Gather amount of each unique state into a list
+    for uniqueStates_dicts in uniqueStates_list:
+        for j in uniqueStates_dicts:
+            state = uniqueStates_dicts[j]
+            state_dict = get_robots_amount_of_of_statues_By_rid_and_status(nID, state)
+            values.append(state_dict)
     
-    pass
+    # Sum of all states
+    sum = 0
+    for dicts in values:
+        sum += dicts['amount']
+    
+    # Ratio of each state
+    rations = []
+    for dicts in values:
+        temp = {}
+        r = (dicts['amount'] / sum)*100
+        temp[dicts['state']] = r
+        rations.append(temp)
+
+    return rations
+
 def checkMTBF_By_ID(nID):
     statuses = get_robots_all_statuses_by_rid(nID)
 
@@ -127,6 +177,11 @@ def alarm_IDLE_state_By_ID(nID):
 def alarm_DOWN_state_By_ID(nID):
     statuses = get_robots_all_statuses_by_rid(nID)
     pass
+
+def draw_Pie_plot(nID):
+    rations = State_rations_By_ID(nID)
+
+
 
 ###################### COMMUNICATION ######################
 
@@ -229,7 +284,7 @@ def home():
     
     return render_template('dashboard.html', status = status)
    
-@app.route("/measurement-history")
+@app.route("/measurement-history", methods=['GET', 'POST'])
 def historical():
     global threadStarted
     if (threadStarted):
@@ -247,10 +302,45 @@ def historical():
         id = 1
     
     nID = f'rob{id}'
-    diagramData, MTBFData = historicalData_By_ID(nID)
-    #print(nID)
+    status = get_robots_current_status_by_rid(nID)
     
-    return render_template('historical-data.html')
+    return render_template('historical-data.html', status = status)
+
+@app.route('/plot.png')
+def plot_png():
+    try:
+        id = int(request.args.get('nID'))
+    except:
+        id = 1
+    print(id)
+    nID = f'rob{id}'
+
+    status = get_robots_current_status_by_rid(nID)
+    if len(status) > 0:
+        fig = create_figure(status['devId'])
+        output = io.BytesIO()
+        FigureCanvas(fig).print_png(output)
+        return Response(output.getvalue(), mimetype='image/png')
+    else: 
+        pass
+
+def create_figure(nID):
+    rations = State_rations_By_ID(nID)
+    labels = []
+    sizes = []
+
+    for dicts in rations:
+        for key in dicts:
+            labels.append(key)
+            sizes.append(dicts[key])
+
+    fig, ax = pyplot.subplots()
+    ax.pie(sizes, labels=labels, autopct='%1.1f%%',
+            shadow=True, startangle=90)
+    ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+    img = f'static/piechart{nID}.png'
+    pyplot.savefig(img)
+    return fig
 
 @app.route("/event-history")
 def events_alarms():

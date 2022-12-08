@@ -137,14 +137,14 @@
         background-color:#ff4040;
         }
     </style>
-    <title>Dashboard for robot: {{nID}}</title>
+    <title>Dashboard for robot: {{status.devId}}</title>
 </head>
 <body>
     <div class="header"></div>
     <div class="topnav">
-        <a href="/dashboard?nID={{nID}}">Dashboard</a>
-        <a href="/measurement-history?nID={{nID}}">Historical data</a>
-        <a href="/event-history?nID={{nID}}">Alarms&Events History</a>
+        <a href="/dashboard?nID={{status.devId}}">Dashboard</a>
+        <a href="/measurement-history?nID={{status.devId}}">Historical data</a>
+        <a href="/event-history?nID={{status.devId}}">Alarms&Events History</a>
     </div>
     <div class="row">
         <div class="leftcolumn">
