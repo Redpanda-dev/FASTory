@@ -150,6 +150,16 @@
             <a href="/dashboard?nID={{status.devId}}">Dashboard</a>
             <a href="/measurement-history?nID={{status.devId}}">Historical data</a>
             <a href="/event-history?nID={{status.devId}}">Alarms&Events History</a>
+            <a href="/measurement-history?nID=1">Rob1</a>
+            <a href="/measurement-history?nID=2">Rob2</a>
+            <a href="/measurement-history?nID=3">Rob3</a>
+            <a href="/measurement-history?nID=4">Rob4</a>
+            <a href="/measurement-history?nID=5">Rob5</a>
+            <a href="/measurement-history?nID=6">Rob6</a>
+            <a href="/measurement-history?nID=7">Rob7</a>
+            <a href="/measurement-history?nID=8">Rob8</a>
+            <a href="/measurement-history?nID=9">Rob9</a>
+            <a href="/measurement-history?nID=10">Rob10</a>
         </div>
         <div class="row">
             <div class="leftcolumn">
@@ -157,21 +167,21 @@
                     <h2>Robot: {{status.devId}}</h2>
                     <h2>Historical data</h2>
                     {% if status.devId %}
-                    {% print("here") %}
-                        <img src="/plot.png?nID={{status.devId}}" alt="Operation status data"/>
+                    <center><img src="/plot.png?nID={{status.devId[3]}}" alt="Operation status data"/></center>
+                    <h3><center>State of {{status.devId}} presented in a Pie Chart (LEGEND BELOW)</center></h3>
+                    <h3></h3>
+                    <h4><center><left>LABEL</left>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<right>RATIO &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;AMOUNT</right></center></h4> 
+                    {% for i in range(0,len) %}
+                    <h4><center><left>{{labels[i]}}</left>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<right>{{sizes[i]}}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{values[i]['amount']}}</right></center></h4> 
+                    {% endfor%}
                     {% endif %}
                 </div>
             </div>
             <div class="rightcolumn">
                 <div class="card">
-                    <h2>Current State</h2>
+                    <h2>MTBF</h2>
                     <div id="currentState" style="height:100px;">
                     </div>
-                </div>
-
-                <div class="card">
-                    <h3>Last time connected</h3>
-                    <div id="lastTimeConnected" style="height:100px;">lastTimeConnected</div>
                 </div>
 
             </div>

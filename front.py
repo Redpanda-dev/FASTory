@@ -4,6 +4,7 @@ import paho.mqtt.client as mqtt
 import configparser
 import os
 import random
+import time as t
 import json
 import sqlite3
 import webbrowser
@@ -62,6 +63,7 @@ def get_robots_current_status_by_rid(id):
     c.execute("SELECT devId, state, time FROM robot WHERE devId=:devId", {'devId': id})
     #fetchone = c.fetchone()
     fetchall = c.fetchall()
+    print(fetchall)
     i = len(fetchall)
     if i > 0:
         last = fetchall[i-1]
@@ -158,7 +160,7 @@ def State_rations_By_ID(nID):
         temp[dicts['state']] = r
         rations.append(temp)
 
-    return rations
+    return rations, values
 
 def checkMTBF_By_ID(nID):
     statuses = get_robots_all_statuses_by_rid(nID)
@@ -215,6 +217,7 @@ def subscribe(client, topic):
         global devId,state,time,status
         #print(f"Received {msg.payload.decode()} from {msg.topic} topic")
         m_in = json.loads(msg.payload.decode()) #decode json data
+        #print(m_in)
         devId = m_in['deviceId']
         state = m_in['state']
         time = m_in['time']
@@ -269,6 +272,7 @@ def home():
         threadStarted=True
         # Start Mqtt thread
         x = threading.Thread(target=run)
+        t.sleep(1)
         x.start()
 
     # Check address -> address needs to be int
@@ -283,7 +287,7 @@ def home():
     status = get_robots_current_status_by_rid(nID)
     
     return render_template('dashboard.html', status = status)
-   
+
 @app.route("/measurement-history", methods=['GET', 'POST'])
 def historical():
     global threadStarted
@@ -293,18 +297,28 @@ def historical():
         threadStarted=True
         # Start Mqtt thread
         x = threading.Thread(target=run)
+        t.sleep(1)
         x.start()
 
     # Check address -> address needs to be int
     try:
         id = int(request.args.get('nID'))
+        print(id)
     except:
         id = 1
     
     nID = f'rob{id}'
     status = get_robots_current_status_by_rid(nID)
+    rations, values = State_rations_By_ID(nID)
+    labels = []
+    sizes = []
+
+    for dicts in rations:
+        for key in dicts:
+            labels.append(key)
+            sizes.append(dicts[key])
     
-    return render_template('historical-data.html', status = status)
+    return render_template('historical-data.html', status = status, len=len(labels), labels = labels, sizes = sizes, values = values)
 
 @app.route('/plot.png')
 def plot_png():
@@ -312,20 +326,24 @@ def plot_png():
         id = int(request.args.get('nID'))
     except:
         id = 1
+        
     print(id)
-    nID = f'rob{id}'
 
+    nID = f'rob{id}'
     status = get_robots_current_status_by_rid(nID)
+    print(status)
     if len(status) > 0:
+        global labels, sizes
         fig = create_figure(status['devId'])
         output = io.BytesIO()
         FigureCanvas(fig).print_png(output)
         return Response(output.getvalue(), mimetype='image/png')
     else: 
-        pass
+        output = io.BytesIO()
+        return Response(output.getvalue())
 
 def create_figure(nID):
-    rations = State_rations_By_ID(nID)
+    rations, values = State_rations_By_ID(nID)
     labels = []
     sizes = []
 
@@ -351,6 +369,7 @@ def events_alarms():
         threadStarted=True
         # Start Mqtt thread
         x = threading.Thread(target=run)
+        t.sleep(1)
         x.start()
     
     # Check address -> address needs to be int
@@ -361,10 +380,13 @@ def events_alarms():
     
     nID = f'rob{id}'
     idle, down = alarms_By_ID(nID)
+    status = get_robots_current_status_by_rid(nID)
 
-    return render_template('event-history.html')
+    return render_template('event-history.html', status = status)
 
+
+webbrowser.open("http://127.0.0.1:5000/dashboard")
 if __name__ == '__main__':
     app.run(debug=True)
-    webbrowser.open("http://127.0.0.1:5000/dashboard")
+    
     
