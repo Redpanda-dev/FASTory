@@ -1,17 +1,9 @@
-from flask import Flask, render_template, request, Response
-import threading
 import paho.mqtt.client as mqtt
 import configparser
 import os
 import random
-import time as t
 import json
 import sqlite3
-import webbrowser
-import io
-import matplotlib.pyplot as pyplot
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-from matplotlib.figure import Figure
 
 ######################## HOW TO RUN THE PROGRAM #########################
 #                                                                       #
@@ -35,21 +27,22 @@ threadStarted=False
 
 ###################### STORE DATA (SCADA) ######################
 
+# This is the this
 def dict_factory(cursor, row):
     d = {}
     for idx, col in enumerate(cursor.description):
         d[col[0]] = row[idx]
     return d
 
-conn = sqlite3.connect(':memory:',check_same_thread=False)
+conn = sqlite3.connect(':memory:', check_same_thread=False)
 conn.row_factory = dict_factory
 c = conn.cursor()
 c.execute("DROP TABLE IF EXISTS robot;")
 c.execute("""CREATE TABLE IF NOT EXISTS robot (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            devId text,
-            state text,
-            time text
+            devId TEXT,
+            state TEXT,
+            time TIMESTAMP
             );""")
 
 # CREATE A ROBOT -> IF CREATED -> UPDATE
@@ -76,6 +69,16 @@ def get_robots_current_status_by_rid(id):
 def get_robots_all_statuses_by_rid(id):
     c.execute("SELECT devId, state, time FROM robot WHERE devId=:devId", {'devId': id})
     #fetchone = c.fetchone()
+    fetchall = c.fetchall()
+    i = len(fetchall)
+    if i > 0:
+        return fetchall
+    else:
+        return []
+
+# READ ALL ROBOTS STATUSES BY ID
+def get_robots_ALL_by_rid_and_state(id, state):
+    c.execute("SELECT devId, state, time FROM robot WHERE devId=:devId AND state=:state", {'devId': id, 'state':state})
     fetchall = c.fetchall()
     i = len(fetchall)
     if i > 0:
@@ -133,62 +136,6 @@ def remove_robot(devId):
                         id = :id""",
                   {'devId': devId})
 
-###################### PROCESS DATA ######################
-
-# HISTORICAL DATA
-def historicalData_By_ID(nID):
-    diagramData = State_rations_By_ID(nID)
-    MTBFData = checkMTBF_By_ID(nID)
-    return diagramData, MTBFData
-
-def State_rations_By_ID(nID):
-    values = []
-    uniqueStates_list = get_robots_unique_states_by_rid(nID)
-    # Gather amount of each unique state into a list
-    for uniqueStates_dicts in uniqueStates_list:
-        for j in uniqueStates_dicts:
-            state = uniqueStates_dicts[j]
-            state_dict = get_robots_amount_of_of_statues_By_rid_and_status(nID, state)
-            values.append(state_dict)
-    
-    # Sum of all states
-    sum = 0
-    for dicts in values:
-        sum += dicts['amount']
-    
-    # Ratio of each state
-    rations = []
-    for dicts in values:
-        temp = {}
-        r = (dicts['amount'] / sum)*100
-        temp[dicts['state']] = r
-        rations.append(temp)
-
-    return rations, values
-
-def checkMTBF_By_ID(nID):
-    statuses = get_robots_all_statuses_by_rid(nID)
-
-    pass
-
-# ALARMS
-def alarms_By_ID(nID):
-    idle = alarm_IDLE_state_By_ID(nID)
-    down = alarm_DOWN_state_By_ID(nID)
-    return idle, down
-
-def alarm_IDLE_state_By_ID(nID):
-    statuses = get_robots_all_statuses_by_rid(nID)
-    pass
-def alarm_DOWN_state_By_ID(nID):
-    statuses = get_robots_all_statuses_by_rid(nID)
-    pass
-
-def draw_Pie_plot(nID):
-    rations = State_rations_By_ID(nID)
-
-
-
 ###################### COMMUNICATION ######################
 
 # GET PATH TO THE CONFIG FILE
@@ -231,7 +178,6 @@ def subscribe(client, topic):
     client.subscribe(topic)
     client.on_message = on_message
 
-# START MQTT COMMUNICATION
 def run():
     DEBUG = 0
     # Check MQTT connection with Mosquitto
@@ -252,146 +198,3 @@ def run():
     client = connect_mqtt(broker=broker, port=port, client_id=client_id, DEBUG=DEBUG)
     subscribe(client, topic)
     client.loop_forever()  # Start networking daemon
-
-
-###################### APP ######################
-
-# GET PATH TO TEMPLATES
-# Original Path = C:\Users\Miska\Documents\AUT840\GIT\FASTory\templates
-template_dir = os.path.dirname(os.path.dirname(os.path.abspath(os.path.dirname(__file__)))) # ROOT
-print(template_dir)
-template_dir = os.path.join(template_dir,'Documents')
-template_dir = os.path.join(template_dir,'FASTory')
-template_dir = os.path.join(template_dir,'templates')
-#print(template_dir)
-app = Flask(__name__, template_folder=template_dir)
-
-@app.route("/")
-@app.route("/dashboard")
-def home():
-    global threadStarted
-
-    if (threadStarted):
-        pass
-    else:
-        threadStarted=True
-        # Start Mqtt thread
-        x = threading.Thread(target=run)
-        t.sleep(1)
-        x.start()
-
-    # Check address -> address needs to be int
-    try:
-        id = int(request.args.get('nID'))
-    except:
-        id = 1
-    
-    nID = f'rob{id}'
-    #print(nID)
-
-    status = get_robots_current_status_by_rid(nID)
-    
-    return render_template('dashboard.html', status = status)
-
-@app.route("/measurement-history", methods=['GET', 'POST'])
-def historical():
-    global threadStarted
-    if (threadStarted):
-        pass
-    else:
-        threadStarted=True
-        # Start Mqtt thread
-        x = threading.Thread(target=run)
-        t.sleep(1)
-        x.start()
-
-    # Check address -> address needs to be int
-    try:
-        id = int(request.args.get('nID'))
-        print(id)
-    except:
-        id = 1
-    
-    nID = f'rob{id}'
-    status = get_robots_current_status_by_rid(nID)
-    rations, values = State_rations_By_ID(nID)
-    labels = []
-    sizes = []
-
-    for dicts in rations:
-        for key in dicts:
-            labels.append(key)
-            sizes.append(dicts[key])
-    
-    return render_template('historical-data.html', status = status, len=len(labels), labels = labels, sizes = sizes, values = values)
-
-@app.route('/plot.png')
-def plot_png():
-    try:
-        id = int(request.args.get('nID'))
-    except:
-        id = 1
-        
-    print(id)
-
-    nID = f'rob{id}'
-    status = get_robots_current_status_by_rid(nID)
-    print(status)
-    if len(status) > 0:
-        global labels, sizes
-        fig = create_figure(status['devId'])
-        output = io.BytesIO()
-        FigureCanvas(fig).print_png(output)
-        return Response(output.getvalue(), mimetype='image/png')
-    else: 
-        output = io.BytesIO()
-        return Response(output.getvalue())
-
-def create_figure(nID):
-    rations, values = State_rations_By_ID(nID)
-    labels = []
-    sizes = []
-
-    for dicts in rations:
-        for key in dicts:
-            labels.append(key)
-            sizes.append(dicts[key])
-
-    fig, ax = pyplot.subplots()
-    ax.pie(sizes, labels=labels, autopct='%1.1f%%',
-            shadow=True, startangle=90)
-    ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
-    img = f'static/piechart{nID}.png'
-    pyplot.savefig(img)
-    return fig
-
-@app.route("/event-history")
-def events_alarms():
-    global threadStarted
-    if (threadStarted):
-        pass
-    else:
-        threadStarted=True
-        # Start Mqtt thread
-        x = threading.Thread(target=run)
-        t.sleep(1)
-        x.start()
-    
-    # Check address -> address needs to be int
-    try:
-        id = int(request.args.get('nID'))
-    except:
-        id = 1
-    
-    nID = f'rob{id}'
-    idle, down = alarms_By_ID(nID)
-    status = get_robots_current_status_by_rid(nID)
-
-    return render_template('event-history.html', status = status)
-
-
-webbrowser.open("http://127.0.0.1:5000/dashboard")
-if __name__ == '__main__':
-    app.run(debug=True)
-    
-    
