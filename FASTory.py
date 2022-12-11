@@ -1,6 +1,5 @@
 import requests
 import socket
-import time
 import json
 
 #{IP}/_services/{command}

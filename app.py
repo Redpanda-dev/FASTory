@@ -6,7 +6,7 @@ import time
 app = Flask(__name__)
 
 history = []
-running = False
+running = True
 orders = {}
 order_id = 0
 workstations = {}
@@ -81,6 +81,3 @@ def add_workstaion(ws_id, ip_rob, ip_cnv, answerurl, zspot_number):
 
 if __name__ == '__main__':
     app.run(debug=True, port=8080)
-    while(running):
-        cycle_workstations()
-        time.sleep(10)
