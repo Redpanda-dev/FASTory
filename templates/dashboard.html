@@ -132,6 +132,16 @@
         background-color:#66cd00;
         }
 
+        .downState{
+        color:rgb(255, 255, 255);
+        background-color:#474747;
+        }
+
+        .readyState{
+        color:black;
+        background-color:#b4ffd5;
+        }
+
         .errorState{
         color:black;
         background-color:#ff4040;
@@ -158,23 +168,39 @@
     </div>
     <div class="row">
         <div class="leftcolumn">
-            <div class="card">
+            {% if status.state == "IDLE" %}
+                <div class="card idleState">
+            {% elif status.state == "READY" %}
+                <div class="card workingState">
+            {% elif status.state == "DOWN" %}
+                <div class="card downState">
+            {% elif status.state == "OFF" %}
+                <div class="card errorState">
+            {% elif status.state == "READY-IDLE-STARVED" %}
+                <div class="card errorState">
+            {% elif status.state == "READY-PROCESSING-ACTIVE" %}
+                <div class="card errorState">
+            {% elif status.state == "BLOCKED" %}
+                <div class="card errorState">
+            {% elif status.state == "SETUP" %}
+                <div class="card workingState">
+            {% else %}
+                <div class="card errorState">
+            {% endif %}
                 <h2>Robot: {{status.devId}}</h2>
-                <h2>Color-based state</h2>
+                <h2><b>Current State: 
+                    {% if status.state %}
+                    <H3> {{status.state}}</H3></b></h2>
+                    {% else %}
+                    <H3> NOT CONNECTED </H3></b></h2>
+                    {% endif %}
             </div>
         </div>
         <div class="rightcolumn">
             <div class="card">
-                <h2>Current State</h2>
-                <div id="currentState" style="height:100px;">{{status.state}}
-                </div>
-            </div>
-
-            <div class="card">
                 <h3>Last time connected</h3>
                 <div id="lastTimeConnected" style="height:100px;">{{status.time}}</div>
             </div>
-
         </div>
     </div>
     <script>

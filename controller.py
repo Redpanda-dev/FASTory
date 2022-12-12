@@ -1,6 +1,22 @@
 import matplotlib.pyplot as pyplot
 import model
 import time
+import datetime
+
+######################## HOW TO RUN THE PROGRAM #########################
+#                                                                       #
+#   In order to run the program you need to install the dependencies    #
+#   After dependencies:                                                 #    
+#   > Navigate to the programs folder                                   #
+#   > Check the configfile and template_dir variables to match the      #
+#     folder where they are located                                     #
+#   > run on terminal: python view.py                                   #
+#   > If webpage does not automaticall open:                            #
+#   open it manually by navigating to address: http://127.0.0.1:5000/   #
+#                                                                       #
+#########################################################################
+
+date_format = '%Y-%m-%d %H:%M:%S.%f'
 
 # HISTORICAL DATA
 def historicalData_By_ID(nID):
@@ -34,9 +50,21 @@ def State_rations_By_ID(nID):
     return rations, values
 
 def checkMTBF_By_ID(nID):
+    state = "DOWN"
+    down_statuses = model.get_robots_ALL_by_rid_and_state(nID, state)
     statuses = model.get_robots_all_statuses_by_rid(nID)
-
-    pass
+    if len(statuses) > 0:
+        first = datetime.datetime.strptime(statuses[0]['time'], date_format)
+        print(first)
+        l = len(down_statuses)-1
+        last = datetime.datetime.strptime(statuses[l]['time'], date_format)
+        operating_time = last-first
+        number_of_failures = len(down_statuses)
+        if (number_of_failures) != 0:
+            MTBF = (operating_time) / (number_of_failures)
+            return MTBF
+    else:
+        return 0
 
 # ALARMS
 def alarms_By_ID(nID, alertTime):
@@ -45,30 +73,36 @@ def alarms_By_ID(nID, alertTime):
     return idle, down
 
 def alarm_IDLE_state_By_ID(nID, alertTime):
-    current_time = time.time()
-    state = 'IDLE'
-    statuses = model.get_robots_ALL_by_rid_and_state(nID, state)
-    last = len(statuses)-1
-    if(last > 0):
-        timestamp = statuses[last]['time']
-        time_dif = current_time-timestamp
-        if time_dif > alertTime:
-            return timestamp
+    current_time = datetime.datetime.now()
+    model.update_LOG_of_state_by_ID(nID, "idle")
+    statuses = model.get_LOG_of_state_by_ID(nID, "idle")
+    #print("Statuses in alarm: ",statuses)
+    log = []
+    for i in statuses:
+        timestamp = i['time']
+        timeobj = datetime.datetime.strptime(timestamp, date_format)
+        time_dif = current_time-timeobj
+        if time_dif > datetime.timedelta(minutes=alertTime):
+            log.append(i)
         else:
-            return {}
+            pass
+    return log
 
 def alarm_DOWN_state_By_ID(nID, alertTime):
-    current_time = time.time()
-    state = 'DOWN'
-    statuses = model.get_robots_ALL_by_rid_and_state(nID, state)
-    last = len(statuses)-1
-    if(last > 0):
-        timestamp = statuses[last]['time']
-        time_dif = current_time-timestamp
-        if time_dif > alertTime:
-            return timestamp
+    current_time = datetime.datetime.now()
+    model.update_LOG_of_state_by_ID(nID, "down")
+    statuses = model.get_LOG_of_state_by_ID(nID, "down")
+    #print("Statuses in alarm: ",statuses)
+    log = []
+    for i in statuses:
+        timestamp = i['time']
+        timeobj = datetime.datetime.strptime(timestamp, date_format)
+        time_dif = current_time-timeobj
+        if time_dif > datetime.timedelta(minutes=alertTime):
+            log.append(i)
         else:
-            return {}
+            pass
+    return log
 
 def create_figure(nID):
     rations, values = State_rations_By_ID(nID)
@@ -82,7 +116,7 @@ def create_figure(nID):
 
     fig, ax = pyplot.subplots()
     ax.pie(sizes, labels=labels, autopct='%1.1f%%',
-            shadow=True, startangle=90)
+            shadow=False, startangle=90)
     ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
     img = f'static/piechart{nID}.png'
     pyplot.savefig(img)

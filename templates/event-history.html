@@ -161,16 +161,36 @@
         <div class="row">
             <div class="leftcolumn">
                 <div class="card">
-                    <h2>Robot: {{status.devId}}</h2>
-                    <h2>Events</h2>
+                    <h2>Alarms of Robot: {{status.devId}}</h2>
+                    <h2>IDLE:</h2>
+                    <table><tr>
+                        <th>State</th>
+                        <th>Time</th>
+                    </tr>
+                    {% for item in idle %}
+                    <tr>
+                        <td>{{ item.state }}</td>
+                        <td>{{ item.time }}</td>
+                    </tr>
+                    {% endfor %}
+                    </table>
                 </div>
             </div>
             <div class="rightcolumn">
                 <div class="card">
-                    <h2>Alarms</h2>
-                    <div id="alarms" style="height:100px;">Alarms</div>
-                    <h2>IDLE: {{idle}}</h2>
-                    <h2>DOWN: {{down}}</h2>
+                    <h2>Alarm Threshold: {{alarm_threshold}} minutes</h2>
+                    <h2>DOWN:</h2>
+                    <table><tr>
+                        <th>State</th>
+                        <th>Time</th>
+                    </tr>
+                    {% for item in down %}
+                    <tr>
+                        <td>{{ item.state }}</td>
+                        <td>{{ item.time }}</td>
+                    </tr>
+                    {% endfor %}
+                    </table>
             </div>
         </div>
         <script>

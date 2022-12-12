@@ -4,7 +4,7 @@ import os
 import time
 
 configfile = os.path.dirname(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-configfile = os.path.join(configfile,'Documents')
+configfile = os.path.join(configfile,'GIT')
 configfile = os.path.join(configfile,'FASTory')
 configfile = os.path.join(configfile,'config.ini')
 
@@ -22,8 +22,8 @@ MQTT_PORT = int(config['DEBUG']['mqtt_port'])
 MQTT_TOPIC = "ii22/telemetry/11"
 MQTT_MESSAGE = """{
 "deviceId":"rob1",
-"state":"IDLE",
-"time": "2022-11-09 12:45:33.367067"
+"state":"READY",
+"time": "2022-11-09 16:00:00.0"
 }"""
 
 def on_connect(client, userdata, flags, rc):
