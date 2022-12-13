@@ -230,6 +230,7 @@ class Bridge:
         self.client.subscribe(topic)
         self.client.on_message = on_message
 
+    # Useful?
     def run_mqtt(self):
         DEBUG = 0
         # Check MQTT connection with Mosquitto
@@ -254,10 +255,11 @@ class Bridge:
         app = Flask(__name__)
 
         @app.post("/publish/")
-        def publish(self):
+        def publish():
             payload = json.loads(flaskrequest.form)
             mqttpayload = json.dumps(payload)
+            self.client.
         
         @app.get("/helloworld/")
-        def helloworld(self):
+        def helloworld():
             return "Hello World"
