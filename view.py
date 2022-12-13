@@ -41,7 +41,7 @@ def home():
     else:
         threadStarted=True
         # Start Mqtt thread
-        x = threading.Thread(target=model.run)
+        x = threading.Thread(target=model.run_mqtt_http)
         t.sleep(1)
         x.start()
 
@@ -66,7 +66,7 @@ def historical():
     else:
         threadStarted=True
         # Start Mqtt thread
-        x = threading.Thread(target=model.run)
+        x = threading.Thread(target=model.run_mqtt_http)
         t.sleep(1)
         x.start()
 
@@ -120,7 +120,7 @@ def events_alarms():
     else:
         threadStarted=True
         # Start Mqtt thread
-        x = threading.Thread(target=model.run)
+        x = threading.Thread(target=model.run_mqtt_http)
         t.sleep(1)
         x.start()
     
