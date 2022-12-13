@@ -5,20 +5,14 @@ import json
 import os
 import configparser
 import threading
+import random
 
 # Run this in a differnt instance
-
-mqtt_topic_name = 11
-devId = -1
-state = 'Null'
-time = 'Null'
-status = {'deviceId':devId, 'state': state, 'time':time}
-threadStarted=False
 
 class Bridge:
     def __init__(self,broker, port, client_id) -> None:
         self.client = self.connect_mqtt(broker, port, client_id)
-        self.topic = None
+        self.topics = {}  
 
     # CONNECT TO BROKER AND DEFINE CLIENT
     def connect_mqtt(self, broker, port, client_id) -> mqtt:
@@ -36,11 +30,9 @@ class Bridge:
     # SUBSCRIBE TO A TOPIC
     def subscribe_topics(self, topic):
         global devId,state,time,status
-        self.topic = topic
         self.client.subscribe(topic)
 
-    def run_mqtt(self, topic):
-        self.subscribe_topics(topic)
+    def run_mqtt(self):
         x = threading.Thread(target=self.client.loop_forever)
         x.start()
         
@@ -49,21 +41,36 @@ class Bridge:
 
         @app.post("/publish/")
         def publish():
-            payload = json.loads(flaskrequest.form)
-            mqttpayload = json.dumps(payload)
-            self.client.publish(topic=self.topic, payload=mqttpayload)
+            jsonmsg = flaskrequest.json
+            mqttpayload = json.dumps(jsonmsg)
+            if jsonmsg["deviceId"] in self.topics:
+                topic = self.topics[jsonmsg["deviceId"]]
+            else:
+                topic = f'ii22/telemetry/{jsonmsg["deviceId"]}'
+                self.subscribe_topics(topic)
+                self.topics[jsonmsg["deviceId"]] = topic
+            
+            self.client.publish(topic=topic, payload=mqttpayload)
+            return "success"
         
         @app.get("/helloworld/")
         def helloworld():
             return "Hello World"
         
+        @app.post("/subscribe/")
+        def subscribe_events():
+            jsonmsg = flaskrequest.form
+            destUrl=jsonmsg["destUrl"]
+            host = jsonmsg["host"]
+            eventID = jsonmsg["eventID"]
+            msg = {"destUrl" : f"http://{destUrl}/publish/"}
+            url = f"http://{host}/rest/events/{eventID}/notifs"
+            payload = json.dumps(msg)
+            response = requests.post(url=url, data=payload)
+            return "success"
+        
         app.run(port=8080)
         
-    def subscribe_events(self, host, eventID, destUrl):
-        msg = {"destUrl" : f"{destUrl}/publish/"}
-        url = f"http://{host}/rest/events/{eventID}/notifs"
-        payload = json.dumps(msg)
-        response = requests.post(url=url, data=payload)
 
 def run_mqtt_http():
     # GET PATH TO THE CONFIG FILE
@@ -87,10 +94,9 @@ def run_mqtt_http():
         broker = str(config['CONNECTION']['mqtt_broker'])
         port = int(config['CONNECTION']['mqtt_port'])
         client_id = 'Group-AaroLeeviMiska'
-        topic = f'ii22/telemetry/{mqtt_topic_name}'
-
+        
     midwear = Bridge(broker, port, client_id)
-    midwear.run_mqtt(topic)
+    midwear.run_mqtt()
     midwear.run_server("midwear")
 
 if __name__ == '__main__':
