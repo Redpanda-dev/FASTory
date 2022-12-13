@@ -212,6 +212,7 @@ class Bridge:
         self.topic = topic
         # messages from broker are sent to on_message call
         def on_message(client, userdata, msg):
+            print(msg)
             global devId,state,time,status
             #print(f"Received {msg.payload.decode()} from {msg.topic} topic")
             m_in = json.loads(msg.payload.decode()) #decode json data
