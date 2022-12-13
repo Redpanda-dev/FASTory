@@ -1,11 +1,8 @@
-import paho.mqtt.client as mqtt
 import configparser
 import os
 import random
-import json
 import sqlite3
-from flask import Flask, request as flaskrequest
-import requests
+from mqtthttp import Bridge
 
 ######################## HOW TO RUN THE PROGRAM #########################
 #                                                                       #
@@ -185,98 +182,3 @@ def remove_robot(devId):
                     WHERE 
                         id = :id""",
                   {'devId': devId})
-
-###################### COMMUNICATION ######################
-
-class Bridge:
-    def __init__(self,broker, port, client_id) -> None:
-        self.topic = None
-        self.client = self.connect_mqtt(broker, port, client_id)
-
-    # CONNECT TO BROKER AND DEFINE CLIENT
-    def connect_mqtt(self, broker, port, client_id) -> mqtt:
-        print(f'Connecting to {broker} : {port}')
-        def on_connect(client, userdata, flags, rc):
-            if rc == 0:
-                print("Connected to MQTT Broker!")
-            else:
-                print("Failed to connect, return code %d\n", rc)
-        client = mqtt.Client(client_id)
-        client.on_connect = on_connect
-        client.connect(broker, port)
-        return client
-
-    # SUBSCRIBE TO A TOPIC
-    def subscribe_topics(self, topic):
-        global devId,state,time,status
-        self.topic = topic
-        # messages from broker are sent to on_message call
-        def on_message(client, userdata, msg):
-            print(msg)
-            global devId,state,time,status
-            #print(f"Received {msg.payload.decode()} from {msg.topic} topic")
-            m_in = json.loads(msg.payload.decode()) #decode json data
-            #print(m_in)
-            devId = m_in['deviceId']
-            state = m_in['state']
-            time = m_in['time']
-            insert_robot(devId, state, time) # ADD ROBOT TO SQL
-            #robots = get_robots_state_by_id(1)
-            #print(robots['state'])
-        self.client.subscribe(topic)
-        self.client.on_message = on_message
-
-    # Useful?
-    def run_mqtt(self):
-        self.client.loop_forever()  # Start networking daemon
-        
-    def run_server(self, name):
-        app = Flask(name)
-
-        @app.post("/publish/")
-        def publish():
-            payload = json.loads(flaskrequest.form)
-            mqttpayload = json.dumps(payload)
-            self.client.publish(topic=self.topic, payload=mqttpayload)
-        
-        @app.get("/helloworld/")
-        def helloworld():
-            return "Hello World"
-        
-        app.run()
-        
-    def subscribe_events(self, host, eventID, destUrl):
-        msg = {"destUrl" : f"{destUrl}/publish/"}
-        url = f"http://{host}/rest/events/{eventID}/notifs"
-        payload = json.dumps(msg)
-        response = requests.post(url=url, data=payload)
-
-
-def run_mqtt_http():
-    # GET PATH TO THE CONFIG FILE
-    # Original Path = C:\Users\Miska\Documents\AUT840\GIT\FASTory\templates
-    configfile = os.path.abspath(os.path.dirname(__file__))
-    configfile = os.path.join(configfile,'config.ini')
-
-    config = configparser.ConfigParser()
-    config.sections()
-    config.read(configfile)
-
-    DEBUG = 1
-    # Check MQTT connection with Mosquitto
-    if DEBUG == 1:
-        broker = str(config['DEBUG']['mqtt_broker'])
-        port = int(config['DEBUG']['mqtt_port'])
-        topic = config['DEBUG']['topic']
-        client_id = f'python-mqtt-{random.randint(0, 100)}'
-    # Use Courses MQTT settings
-    else:
-        broker = str(config['CONNECTION']['mqtt_broker'])
-        port = int(config['CONNECTION']['mqtt_port'])
-        client_id = 'Group-AaroLeeviMiska'
-        topic = f'ii22/telemetry/{mqtt_topic_name}'
-
-    midwear = Bridge(broker, port, client_id)
-    midwear.subscribe_topics(topic)
-    midwear.run_mqtt()
-    midwear.run_server("midwear")
