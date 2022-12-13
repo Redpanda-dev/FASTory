@@ -193,9 +193,7 @@ def draw_Pie_plot(nID):
 
 # GET PATH TO THE CONFIG FILE
 # Original Path = C:\Users\Miska\Documents\AUT840\GIT\FASTory\templates
-configfile = os.path.dirname(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-configfile = os.path.join(configfile,'Documents')
-configfile = os.path.join(configfile,'FASTory')
+configfile = os.path.abspath(os.path.dirname(__file__))
 configfile = os.path.join(configfile,'config.ini')
 
 config = configparser.ConfigParser()
@@ -258,10 +256,7 @@ def run():
 
 # GET PATH TO TEMPLATES
 # Original Path = C:\Users\Miska\Documents\AUT840\GIT\FASTory\templates
-template_dir = os.path.dirname(os.path.dirname(os.path.abspath(os.path.dirname(__file__)))) # ROOT
-print(template_dir)
-template_dir = os.path.join(template_dir,'Documents')
-template_dir = os.path.join(template_dir,'FASTory')
+template_dir = os.path.abspath(os.path.dirname(__file__)) # ROOT
 template_dir = os.path.join(template_dir,'templates')
 #print(template_dir)
 app = Flask(__name__, template_folder=template_dir)

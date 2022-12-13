@@ -23,9 +23,7 @@ import controller
 
 # GET PATH TO TEMPLATES
 # Original Path = C:\Users\Miska\Documents\AUT840\GIT\FASTory\templates
-template_dir = os.path.dirname(os.path.dirname(os.path.abspath(os.path.dirname(__file__)))) # ROOT
-template_dir = os.path.join(template_dir,'GIT')
-template_dir = os.path.join(template_dir,'FASTory')
+template_dir = os.path.abspath(os.path.dirname(__file__)) # ROOT
 template_dir = os.path.join(template_dir,'templates')
 #print(template_dir)
 app = Flask(__name__, template_folder=template_dir)

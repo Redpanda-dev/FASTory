@@ -4,6 +4,8 @@ import os
 import random
 import json
 import sqlite3
+from flask import Flask, request as flaskrequest
+import requests
 
 ######################## HOW TO RUN THE PROGRAM #########################
 #                                                                       #
@@ -188,61 +190,74 @@ def remove_robot(devId):
 
 # GET PATH TO THE CONFIG FILE
 # Original Path = C:\Users\Miska\Documents\AUT840\GIT\FASTory\templates
-configfile = os.path.dirname(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-configfile = os.path.join(configfile,'GIT')
-configfile = os.path.join(configfile,'FASTory')
+configfile = os.path.abspath(os.path.dirname(__file__))
 configfile = os.path.join(configfile,'config.ini')
 
 config = configparser.ConfigParser()
 config.sections()
 config.read(configfile)
 
-# CONNECT TO BROKER AND DEFINE CLIENT
-def connect_mqtt(broker, port, client_id, DEBUG) -> mqtt:
-    def on_connect(client, userdata, flags, rc):
-        if rc == 0:
-            print("Connected to MQTT Broker!")
-        else:
-            print("Failed to connect, return code %d\n", rc)
-    client = mqtt.Client(client_id)
-    client.on_connect = on_connect
-    client.connect(broker, port)
-    return client
+class Bridge:
+    def __init__(self,broker, port, client_id, DEBUG) -> None:
+        self.client = self.connect_mqtt(broker, port, client_id, DEBUG)
 
-# SUBSCRIBE TO A TOPIC
-def subscribe(client, topic):
-    global devId,state,time,status
-    def on_message(client, userdata, msg):
+    # CONNECT TO BROKER AND DEFINE CLIENT
+    def connect_mqtt(self, broker, port, client_id, DEBUG) -> mqtt:
+        def on_connect(client, userdata, flags, rc):
+            if rc == 0:
+                print("Connected to MQTT Broker!")
+            else:
+                print("Failed to connect, return code %d\n", rc)
+        client = mqtt.Client(client_id)
+        client.on_connect = on_connect
+        client.connect(broker, port)
+        return client
+
+    # SUBSCRIBE TO A TOPIC
+    def subscribe(self, topic):
         global devId,state,time,status
-        #print(f"Received {msg.payload.decode()} from {msg.topic} topic")
-        m_in = json.loads(msg.payload.decode()) #decode json data
-        #print(m_in)
-        devId = m_in['deviceId']
-        state = m_in['state']
-        time = m_in['time']
-        insert_robot(devId, state, time) # ADD ROBOT TO SQL
-        #robots = get_robots_state_by_id(1)
-        #print(robots['state'])
-    client.subscribe(topic)
-    client.on_message = on_message
+        def on_message(client, userdata, msg):
+            global devId,state,time,status
+            #print(f"Received {msg.payload.decode()} from {msg.topic} topic")
+            m_in = json.loads(msg.payload.decode()) #decode json data
+            #print(m_in)
+            devId = m_in['deviceId']
+            state = m_in['state']
+            time = m_in['time']
+            insert_robot(devId, state, time) # ADD ROBOT TO SQL
+            #robots = get_robots_state_by_id(1)
+            #print(robots['state'])
+        self.client.subscribe(topic)
+        self.client.on_message = on_message
 
-def run():
-    DEBUG = 0
-    # Check MQTT connection with Mosquitto
-    if DEBUG == 1:
-        broker = str(config['DEBUG']['mqtt_broker'])
-        port = int(config['DEBUG']['mqtt_port'])
-        topic = config['DEBUG']['topic']
-        client_id = f'python-mqtt-{random.randint(0, 100)}'
+    def run_mqtt(self):
+        DEBUG = 0
+        # Check MQTT connection with Mosquitto
+        if DEBUG == 1:
+            broker = str(config['DEBUG']['mqtt_broker'])
+            port = int(config['DEBUG']['mqtt_port'])
+            topic = config['DEBUG']['topic']
+            client_id = f'python-mqtt-{random.randint(0, 100)}'
 
-    # Use Courses MQTT settings
-    else:
-        broker = str(config['CONNECTION']['mqtt_broker'])
-        port = int(config['CONNECTION']['mqtt_port'])
-        client_id = 'Group-AaroLeeviMiska'
-        topic = f'ii22/telemetry/{mqtt_topic_name}'
+        # Use Courses MQTT settings
+        else:
+            broker = str(config['CONNECTION']['mqtt_broker'])
+            port = int(config['CONNECTION']['mqtt_port'])
+            client_id = 'Group-AaroLeeviMiska'
+            topic = f'ii22/telemetry/{mqtt_topic_name}'
 
-    print(f'Connecting to {broker} : {port}')
-    client = connect_mqtt(broker=broker, port=port, client_id=client_id, DEBUG=DEBUG)
-    subscribe(client, topic)
-    client.loop_forever()  # Start networking daemon
+        print(f'Connecting to {broker} : {port}')
+        self.subscribe(topic)
+        self.client.loop_forever()  # Start networking daemon
+        
+    def run_server(self):
+        app = Flask(__name__)
+
+        @app.post("/publish/")
+        def publish(self):
+            payload = json.loads(flaskrequest.form)
+            mqttpayload = json.dumps(payload)
+        
+        @app.get("/helloworld/")
+        def helloworld(self):
+            return "Hello World"
