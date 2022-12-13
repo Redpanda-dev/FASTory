@@ -61,7 +61,7 @@ class Bridge:
         def subscribe_events():
             jsonmsg = flaskrequest.form
             destUrl=jsonmsg["destUrl"]
-            host = jsonmsg["host"]
+            host = jsonmsg["wsUrl"]
             eventID = jsonmsg["eventID"]
             msg = {"destUrl" : f"http://{destUrl}/publish/"}
             url = f"http://{host}/rest/events/{eventID}/notifs"
