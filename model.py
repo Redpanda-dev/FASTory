@@ -1,8 +1,8 @@
+import paho.mqtt.client as mqtt
 import configparser
 import os
 import random
 import sqlite3
-from mqtthttp import Bridge
 
 ######################## HOW TO RUN THE PROGRAM #########################
 #                                                                       #

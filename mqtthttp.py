@@ -4,6 +4,7 @@ import requests
 import json
 import os
 import configparser
+import threading
 
 # Run this in a differnt instance
 
@@ -38,12 +39,12 @@ class Bridge:
         self.topic = topic
         self.client.subscribe(topic)
 
-    # Useful?
     def run_mqtt(self, topic):
         self.subscribe_topics(topic)
-        self.client.loop_forever()  # Start networking daemon
+        x = threading.Thread(target=self.client.loop_forever)
+        x.start()
         
-    def run(self, name, topic):
+    def run_server(self, name):
         app = Flask(name)
 
         @app.post("/publish/")
@@ -89,7 +90,8 @@ def run_mqtt_http():
         topic = f'ii22/telemetry/{mqtt_topic_name}'
 
     midwear = Bridge(broker, port, client_id)
-    midwear.run("midwear", topic)
+    midwear.run_mqtt(topic)
+    midwear.run_server("midwear")
 
 if __name__ == '__main__':
     run_mqtt_http()
