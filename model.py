@@ -2,7 +2,6 @@ import paho.mqtt.client as mqtt
 import configparser
 import os
 import random
-import json
 import sqlite3
 
 ######################## HOW TO RUN THE PROGRAM #########################
@@ -190,11 +189,10 @@ def remove_robot(devId):
 
 ###################### MQTT COMMUNICATION ######################
 
+
 # GET PATH TO THE CONFIG FILE
 # Original Path = C:\Users\Miska\Documents\AUT840\GIT\FASTory\templates
-configfile = os.path.dirname(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-configfile = os.path.join(configfile,'GIT')
-configfile = os.path.join(configfile,'FASTory')
+configfile = os.path.abspath(os.path.dirname(__file__))
 configfile = os.path.join(configfile,'config.ini')
 
 config = configparser.ConfigParser()
