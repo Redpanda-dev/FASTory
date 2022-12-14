@@ -170,18 +170,26 @@
                     <center><img src="/plot.png?nID={{status.devId[3]}}" alt="Operation status data"/></center>
                     <h3><center>State of {{status.devId}} presented in a Pie Chart (LEGEND BELOW)</center></h3>
                     <h3></h3>
-                    <h4><center><left>LABEL</left>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<right>RATIO &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;AMOUNT</right></center></h4> 
+                    <table><tr>
+                        <th>LABEL</th>
+                        <th>RATIO</th>
+                        <th>AMOUNT</th>
+                    </tr>
                     {% for i in range(0,len) %}
-                    <h4><center><left>{{labels[i]}}</left>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<right>{{sizes[i]}}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{values[i]['amount']}}</right></center></h4> 
-                    {% endfor%}
+                    <tr>
+                        <td>{{labels[i]}}</td>
+                        <td>{{sizes[i]}}</td>
+                        <td>{{values[i]['amount']}}</td>
+                    </tr>
+                    {% endfor %}
+                    </table>
                     {% endif %}
                 </div>
             </div>
             <div class="rightcolumn">
                 <div class="card">
                     <h2>MTBF</h2>
-                    <div id="currentState" style="height:100px;">
-                    </div>
+                    <h2>{{mtbf}}</h2>
                 </div>
 
             </div>

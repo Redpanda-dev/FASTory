@@ -26,7 +26,7 @@ from matplotlib.figure import Figure
 #                                                                       #
 #########################################################################
 
-rid = 1
+mqtt_topic_name = 11
 devId = -1
 state = 'Null'
 time = 'Null'
@@ -84,7 +84,7 @@ def get_robots_all_statuses_by_rid(id):
         return []
 
 def get_robots_unique_states_by_rid(id):
-    c.execute("SELECT DISTINCT state FROM robot WHERE devId=:devId", {'devId': id})
+    c.execute("""SELECT DISTINCT state FROM robot WHERE devId=:devId""", {'devId': id})
     #fetchone = c.fetchone()
     fetchall = c.fetchall()
     print(fetchall)
@@ -117,16 +117,20 @@ def get_all_robots():
     return c.fetchall()
 
 # UPDATE ROBOTS VALUES
-def update_robot(id, devId, state, time):
+def update_robot(id, devId, state, time): 
     with conn:
-        c.execute("""UPDATE robot SET devId = :devId, state = :state, time = :time
+        c.execute("""UPDATE robot 
+                    SET devId = :devId, state = :state, time = :time
                     WHERE id = :id""",
                   {'id': id, 'devId': devId,'state':state, 'time':time})
 
 # DELETE A ROBOT FROM LIST
 def remove_robot(devId):
     with conn:
-        c.execute("DELETE from robot WHERE id = :id",
+        c.execute("""DELETE 
+                        from robot
+                    WHERE 
+                        id = :id""",
                   {'devId': devId})
 
 ###################### PROCESS DATA ######################
@@ -189,9 +193,7 @@ def draw_Pie_plot(nID):
 
 # GET PATH TO THE CONFIG FILE
 # Original Path = C:\Users\Miska\Documents\AUT840\GIT\FASTory\templates
-configfile = os.path.dirname(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-configfile = os.path.join(configfile,'GIT')
-configfile = os.path.join(configfile,'FASTory')
+configfile = os.path.abspath(os.path.dirname(__file__))
 configfile = os.path.join(configfile,'config.ini')
 
 config = configparser.ConfigParser()
@@ -242,7 +244,7 @@ def run():
         broker = str(config['CONNECTION']['mqtt_broker'])
         port = int(config['CONNECTION']['mqtt_port'])
         client_id = 'Group-AaroLeeviMiska'
-        topic = f'ii22/telemetry/{rid}'
+        topic = f'ii22/telemetry/{mqtt_topic_name}'
 
     print(f'Connecting to {broker} : {port}')
     client = connect_mqtt(broker=broker, port=port, client_id=client_id, DEBUG=DEBUG)
@@ -254,9 +256,7 @@ def run():
 
 # GET PATH TO TEMPLATES
 # Original Path = C:\Users\Miska\Documents\AUT840\GIT\FASTory\templates
-template_dir = os.path.dirname(os.path.dirname(os.path.abspath(os.path.dirname(__file__)))) # ROOT
-template_dir = os.path.join(template_dir,'GIT')
-template_dir = os.path.join(template_dir,'FASTory')
+template_dir = os.path.abspath(os.path.dirname(__file__)) # ROOT
 template_dir = os.path.join(template_dir,'templates')
 #print(template_dir)
 app = Flask(__name__, template_folder=template_dir)

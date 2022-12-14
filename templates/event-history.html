@@ -147,27 +147,50 @@
             <a href="/dashboard?nID={{status.devId}}">Dashboard</a>
             <a href="/measurement-history?nID={{status.devId}}">Historical data</a>
             <a href="/event-history?nID={{status.devId}}">Alarms&Events History</a>
-            <a href="/event-history?nID=rob1">Rob1</a>
-            <a href="/event-history?nID=rob2">Rob2</a>
-            <a href="/event-history?nID=rob3">Rob3</a>
-            <a href="/event-history?nID=rob4">Rob4</a>
-            <a href="/event-history?nID=rob5">Rob5</a>
-            <a href="/event-history?nID=rob6">Rob6</a>
-            <a href="/event-history?nID=rob7">Rob7</a>
-            <a href="/event-history?nID=rob8">Rob8</a>
-            <a href="/event-history?nID=rob9">Rob9</a>
-            <a href="/event-history?nID=rob10">Rob10</a>
+            <a href="/event-history?nID=1">Rob1</a>
+            <a href="/event-history?nID=2">Rob2</a>
+            <a href="/event-history?nID=3">Rob3</a>
+            <a href="/event-history?nID=4">Rob4</a>
+            <a href="/event-history?nID=5">Rob5</a>
+            <a href="/event-history?nID=6">Rob6</a>
+            <a href="/event-history?nID=7">Rob7</a>
+            <a href="/event-history?nID=8">Rob8</a>
+            <a href="/event-history?nID=9">Rob9</a>
+            <a href="/event-history?nID=10">Rob10</a>
         </div>
         <div class="row">
             <div class="leftcolumn">
                 <div class="card">
-                    <h2>Events</h2>
+                    <h2>Alarms of Robot: {{status.devId}}</h2>
+                    <h2>IDLE:</h2>
+                    <table><tr>
+                        <th>State</th>
+                        <th>Time</th>
+                    </tr>
+                    {% for item in idle %}
+                    <tr>
+                        <td>{{ item.state }}</td>
+                        <td>{{ item.time }}</td>
+                    </tr>
+                    {% endfor %}
+                    </table>
                 </div>
             </div>
             <div class="rightcolumn">
                 <div class="card">
-                    <h2>Alarms</h2>
-                    <div id="alarms" style="height:100px;">Alarms</div>
+                    <h2>Alarm Threshold: {{alarm_threshold}} minutes</h2>
+                    <h2>DOWN:</h2>
+                    <table><tr>
+                        <th>State</th>
+                        <th>Time</th>
+                    </tr>
+                    {% for item in down %}
+                    <tr>
+                        <td>{{ item.state }}</td>
+                        <td>{{ item.time }}</td>
+                    </tr>
+                    {% endfor %}
+                    </table>
             </div>
         </div>
         <script>
