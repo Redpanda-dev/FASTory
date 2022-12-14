@@ -18,12 +18,13 @@ import datetime
 
 date_format = '%Y-%m-%d %H:%M:%S.%f'
 
-# HISTORICAL DATA
+# RETURN HISTORICAL DATA
 def historicalData_By_ID(nID):
     diagramData, rationValues = State_rations_By_ID(nID)
     MTBFData = checkMTBF_By_ID(nID)
     return diagramData, rationValues, MTBFData
 
+# CALCULATE THE RATIOS OF ALL DIFFERENT STATES OF THE ROBOT 
 def State_rations_By_ID(nID):
     values = []
     uniqueStates_list = model.get_robots_unique_states_by_rid(nID)
@@ -49,45 +50,50 @@ def State_rations_By_ID(nID):
 
     return rations, values
 
+# CALCULATES THE MTBF
 def checkMTBF_By_ID(nID):
+    # CHECK BY STATE:
     state = "DOWN"
     down_statuses = model.get_robots_ALL_by_rid_and_state(nID, state)
     statuses = model.get_robots_all_statuses_by_rid(nID)
+    # CHECK IF STATUSES EXIST
     if len(statuses) > 0:
         first = datetime.datetime.strptime(statuses[0]['time'], date_format)
-        print(first)
-        l = len(down_statuses)-1
+        l = len(down_statuses)-1 # GET LAST DOWN STATUS 
         last = datetime.datetime.strptime(statuses[l]['time'], date_format)
         operating_time = last-first
         number_of_failures = len(down_statuses)
         if (number_of_failures) != 0:
-            MTBF = (operating_time) / (number_of_failures)
+            MTBF = (operating_time) / (number_of_failures) # HOW MANY FAILURES DURING OPERATION (= MTBF)
             return MTBF
     else:
         return 0
 
-# ALARMS
+# RETURN ALARM LOGS
 def alarms_By_ID(nID, alertTime):
     idle = alarm_IDLE_state_By_ID(nID, alertTime)
     down = alarm_DOWN_state_By_ID(nID, alertTime)
     return idle, down
 
+# GET ALARMS OF IDLE STATE BY ID AND SPECIFIED ALERTTIME
 def alarm_IDLE_state_By_ID(nID, alertTime):
-    current_time = datetime.datetime.now()
+    current_time = datetime.datetime.now() # TIME NOW
     model.update_LOG_of_state_by_ID(nID, "idle")
     statuses = model.get_LOG_of_state_by_ID(nID, "idle")
     #print("Statuses in alarm: ",statuses)
     log = []
     for i in statuses:
-        timestamp = i['time']
+        timestamp = i['time'] 
         timeobj = datetime.datetime.strptime(timestamp, date_format)
         time_dif = current_time-timeobj
-        if time_dif > datetime.timedelta(minutes=alertTime):
+# GET ALL STATUSES THATS TIME DIFFERENCE IS LARGER THAN ALERTTIME
+        if time_dif > datetime.timedelta(minutes=alertTime): 
             log.append(i)
         else:
             pass
     return log
 
+# GET ALARMS OF DOWN STATE BY ID AND SPECIFIED ALERTTIME
 def alarm_DOWN_state_By_ID(nID, alertTime):
     current_time = datetime.datetime.now()
     model.update_LOG_of_state_by_ID(nID, "down")
@@ -104,6 +110,7 @@ def alarm_DOWN_state_By_ID(nID, alertTime):
             pass
     return log
 
+# DRAW A FIGURE OF STATES BY ID
 def create_figure(nID):
     rations, values = State_rations_By_ID(nID)
     labels = []
