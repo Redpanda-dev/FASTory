@@ -29,8 +29,10 @@ template_dir = os.path.join(template_dir,'templates')
 app = Flask(__name__, template_folder=template_dir)
 webbrowser.open("http://127.0.0.1:5000/dashboard")
 
+#Thread checking if MQTT communication is running
 threadStarted = model.threadStarted
 
+#Creates the front page
 @app.route("/")
 @app.route("/dashboard")
 def home():
@@ -39,6 +41,7 @@ def home():
     if (threadStarted):
         pass
     else:
+# Start MQTT Communcation
         threadStarted=True
         # Start Mqtt thread
         x = threading.Thread(target=model.run)
@@ -58,12 +61,14 @@ def home():
     
     return render_template('dashboard.html', status = status)
 
+#Creates the Historical data page
 @app.route("/measurement-history", methods=['GET', 'POST'])
 def historical():
     global threadStarted
     if (threadStarted):
         pass
     else:
+# Start MQTT Communcation
         threadStarted=True
         # Start Mqtt thread
         x = threading.Thread(target=model.run)
@@ -83,6 +88,7 @@ def historical():
     labels = []
     sizes = []
 
+# Puts Keys and values of rations in their own lists
     for dicts in rations:
         for key in dicts:
             labels.append(key)
@@ -97,11 +103,10 @@ def plot_png():
     except:
         id = 1
         
-    #print(id)
-
     nID = f'rob{id}'
     status = model.get_robots_current_status_by_rid(nID)
-    #print(status)
+    
+    # Check if status exists -> if exists creates the figure of its rations
     if len(status) > 0:
         global labels, sizes
         fig = controller.create_figure(status['devId'])
@@ -112,12 +117,14 @@ def plot_png():
         output = io.BytesIO()
         return Response(output.getvalue())
 
+# Creates Events and Alarms page
 @app.route("/event-history")
 def events_alarms():
     global threadStarted
     if (threadStarted):
         pass
     else:
+        # Start MQTT Communcation
         threadStarted=True
         # Start Mqtt thread
         x = threading.Thread(target=model.run)
@@ -140,8 +147,6 @@ def events_alarms():
     idle, down = controller.alarms_By_ID(nID, alarm_threshold)
 
     return render_template('event-history.html', status = status, idle = idle, down = down, alarm_threshold = alarm_threshold)
-
-    # START MQTT COMMUNICATION
 
 
 if __name__ == '__main__':
