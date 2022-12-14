@@ -27,7 +27,7 @@ threadStarted=False
 
 ###################### STORE DATA (SCADA) ######################
 
-# This is the this
+# AUT840 COURSES FACTORY_DICT ROW_FACTORY
 def dict_factory(cursor, row):
     d = {}
     for idx, col in enumerate(cursor.description):
@@ -89,6 +89,7 @@ def get_robots_ALL_by_rid_and_state(id, state):
         else:
             return []
 
+# CREATE A TABLE FOR IDLE STATE OF SPECIFIC ROBOT BY ID
 def create_LOG_of_IDLE_by_ID(id):
     state = "idle"
     sqlstate = f"""CREATE TABLE IF NOT EXISTS {state}_log_{id} (
@@ -98,7 +99,7 @@ def create_LOG_of_IDLE_by_ID(id):
         c.execute(sqlstate)
         update_LOG_of_state_by_ID(id, state)
 
-
+# CREATE A TABLE FOR DOWN STATE OF SPECIFIC ROBOT BY ID
 def create_LOG_of_DOWN_by_ID(id):
     state = "down"
     sqlstate = f"""CREATE TABLE IF NOT EXISTS {state}_log_{id} (
@@ -111,7 +112,7 @@ def create_LOG_of_DOWN_by_ID(id):
         else:
             pass
     
-
+# UPDATES THE LOG OF STATE
 def update_LOG_of_state_by_ID(id, state):
     state_upper = state.upper()
     c.execute("""SELECT * FROM robot WHERE devId=:devId AND state=:state""",{'devId': id, 'state':state_upper})
@@ -119,12 +120,14 @@ def update_LOG_of_state_by_ID(id, state):
     values = (id, str(state_upper))
     #print(sqlstate, values)
     sqlstate2 = f"SELECT * FROM {state}_log_{id}"
+#CHECK IF TABLE EXISTS
     if c.execute(sqlstate2):
         c.execute(sqlstate, values)
         #print(c.fetchone())
     else:
         pass
 
+# FETCH VALUES FROM A LOG TABLE BY ID AND STATE
 def get_LOG_of_state_by_ID(id, state):
     sqlstate = f"""SELECT * FROM {state}_log_{id}"""
     if c.execute(sqlstate):
@@ -135,7 +138,7 @@ def get_LOG_of_state_by_ID(id, state):
         print(f"Table: {state}_log_{id} does not exist")
         return []
     
-
+# FETCH ALL SEPERATE STATES THE ROBOT HAS BY ID
 def get_robots_unique_states_by_rid(id):
     c.execute("""SELECT DISTINCT state FROM robot WHERE devId=:devId""", {'devId': id})
     fetchall = c.fetchall()
@@ -146,6 +149,7 @@ def get_robots_unique_states_by_rid(id):
     else:
         return []
 
+# COUNTS AMOUNT OF STATUSES OF ROBOT BY ID AND STATE
 def get_robots_amount_of_of_statues_By_rid_and_status(nID, state):
     c.execute("""
     SELECT 
@@ -184,7 +188,7 @@ def remove_robot(devId):
                         id = :id""",
                   {'devId': devId})
 
-###################### COMMUNICATION ######################
+###################### MQTT COMMUNICATION ######################
 
 # GET PATH TO THE CONFIG FILE
 # Original Path = C:\Users\Miska\Documents\AUT840\GIT\FASTory\templates
@@ -226,6 +230,7 @@ def subscribe(client, topic):
     client.subscribe(topic)
     client.on_message = on_message
 
+# RUN THE COMMUNICATION
 def run():
     DEBUG = 0
     # Check MQTT connection with Mosquitto
